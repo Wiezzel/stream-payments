@@ -1,0 +1,38 @@
+[package]
+name = "pallet-stream-payments"
+version = "0.0.1"
+description = "Substrate pallet for stream payments"
+authors = ["Adam Wierzbicki <wiezzel@gmail.com>"]
+edition = "2021"
+license = "Apache-2.0"
+publish = false
+repository = "https://github.com/Wiezzel/stream-payments/"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
+scale-info = { version = "1.0", default-features = false, features = ["derive"] }
+sp-std = { version = "4.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", tag = "devhub/latest" }
+frame-support = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", tag = "devhub/latest" }
+frame-system = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", tag = "devhub/latest" }
+frame-benchmarking = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", tag = "devhub/latest", optional = true }
+
+[dev-dependencies]
+sp-core = { default-features = false, version = "5.0.0", git = "https://github.com/paritytech/substrate.git", tag = "devhub/latest" }
+sp-io = { default-features = false, version = "5.0.0", git = "https://github.com/paritytech/substrate.git", tag = "devhub/latest" }
+sp-runtime = { default-features = false, version = "5.0.0", git = "https://github.com/paritytech/substrate.git", tag = "devhub/latest" }
+
+[features]
+default = ["std"]
+std = [
+	"codec/std",
+	"scale-info/std",
+	"sp-std/std",
+	"frame-support/std",
+	"frame-system/std",
+]
+
+runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
+try-runtime = ["frame-support/try-runtime"]
