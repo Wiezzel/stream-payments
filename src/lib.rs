@@ -1,5 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#[cfg(test)]
+mod mock;
+
 use frame_support::traits::Currency;
 pub use pallet::*;
 use sp_std::prelude::*;
