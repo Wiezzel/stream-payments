@@ -61,8 +61,10 @@ impl pallet_balances::Config for Test {
     type WeightInfo = ();
 }
 
+pub const MAX_STREAMS: u32 = 4;
+
 frame_support::parameter_types! {
-    pub const MaxStreams: u32 = 8;
+    pub const MaxStreams: u32 = MAX_STREAMS;
 }
 
 impl stream_payments::Config for Test {
@@ -71,8 +73,9 @@ impl stream_payments::Config for Test {
     type MaxStreams = MaxStreams;
 }
 
-const A: u64 = 1;
-const B: u64 = 2;
+pub const A: u64 = 0;
+pub const B: u64 = 1;
+pub const INIT_BALANCE: u64 = 1_000_000;
 
 #[allow(dead_code)]
 pub fn new_test_ext() -> sp_io::TestExternalities {
@@ -80,7 +83,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         .build_storage::<Test>()
         .unwrap();
     let genesis = pallet_balances::GenesisConfig::<Test> {
-        balances: vec![(A, 1_000_000), (B, 1_000_000)],
+        balances: vec![(A, INIT_BALANCE), (B, INIT_BALANCE)],
     };
     genesis.assimilate_storage(&mut t).unwrap();
     t.into()

@@ -1,7 +1,5 @@
 # Stream payments
 
-## Overview
-
 This pallet supports creating *streams* – ongoing payments. Once a stream is opened,
 on every block a specified amount of funds will be transferred from the creator's account
 to the given target account until the stream is closed.
@@ -16,7 +14,7 @@ TBD
 - [ ] Fill in README
 - [ ] Add docstrings
 - [ ] Compute proper weights
-- [ ] Write some tests
+- [x] Write some tests
 
 ### Features
 

@@ -2,6 +2,8 @@
 
 #[cfg(test)]
 mod mock;
+#[cfg(test)]
+mod tests;
 
 use frame_support::traits::Currency;
 pub use pallet::*;
@@ -14,7 +16,7 @@ type BalanceOf<T> = <<T as Config>::Currency as Currency<AccountIdOf<T>>>::Balan
 pub mod pallet {
     use super::*;
     use frame_support::pallet_prelude::*;
-    use frame_support::traits::ExistenceRequirement::KeepAlive;
+    use frame_support::traits::ExistenceRequirement::AllowDeath;
     use frame_system::pallet_prelude::*;
 
     #[pallet::config]
@@ -57,12 +59,13 @@ pub mod pallet {
         Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, MaxEncodedLen, TypeInfo,
     )]
     pub struct Stream<AccountId, Balance> {
-        target: AccountId,
-        spend_rate: Balance,
+        pub target: AccountId,
+        pub spend_rate: Balance,
     }
 
     /// The lookup table for streams.
     #[pallet::storage]
+    #[pallet::getter(fn streams)]
     pub(super) type Streams<T: Config> = StorageMap<
         _,
         Twox64Concat,
@@ -80,7 +83,8 @@ pub mod pallet {
         fn on_initialize(_n: T::BlockNumber) -> Weight {
             for (origin, streams) in <Streams<T>>::iter() {
                 for Stream { target, spend_rate } in streams.iter() {
-                    if let Err(e) = T::Currency::transfer(&origin, target, *spend_rate, KeepAlive) {
+                    if let Err(e) = T::Currency::transfer(&origin, target, *spend_rate, AllowDeath)
+                    {
                         Self::deposit_event(Event::PaymentFailed(
                             origin.clone(),
                             target.clone(),
