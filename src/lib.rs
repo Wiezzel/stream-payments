@@ -1,13 +1,17 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+mod benchmarking;
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
 mod tests;
+pub mod weights;
 
 use frame_support::traits::Currency;
-pub use pallet::*;
 use sp_std::prelude::*;
+
+pub use pallet::*;
+pub use weights::WeightInfo;
 
 type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
 type BalanceOf<T> = <<T as Config>::Currency as Currency<AccountIdOf<T>>>::Balance;
@@ -30,6 +34,9 @@ pub mod pallet {
         /// The maximum number of streams per account.
         #[pallet::constant]
         type MaxStreams: Get<u32>;
+
+        /// Information on runtime weights.
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::event]
@@ -106,7 +113,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(50_000_000)]
+        #[pallet::weight(<T as Config>::WeightInfo::open_stream())]
         pub fn open_stream(
             origin: OriginFor<T>,
             target: AccountIdOf<T>,
@@ -124,7 +131,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(50_000_000)]
+        #[pallet::weight(<T as Config>::WeightInfo::close_stream(0))]
         pub fn close_stream(origin: OriginFor<T>, index: u32) -> DispatchResult {
             let source = ensure_signed(origin)?;
             let index = index as usize;

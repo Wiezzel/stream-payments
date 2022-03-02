@@ -71,6 +71,7 @@ impl stream_payments::Config for Test {
     type Event = Event;
     type Currency = Balances;
     type MaxStreams = MaxStreams;
+    type WeightInfo = stream_payments::weights::SubstrateWeight<Test>;
 }
 
 pub const A: u64 = 0;
