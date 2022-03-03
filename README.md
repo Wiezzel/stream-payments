@@ -13,9 +13,9 @@ TBD
 
 - [ ] Fill in README
 - [ ] Add docstrings
-- [ ] Compute proper weights
+- [x] Compute proper weights
   - [x] Extrinsics
-  - [ ] Hooks
+  - [x] Hooks
 - [x] Write some tests
 
 ### Features

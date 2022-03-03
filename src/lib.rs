@@ -88,8 +88,10 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(_n: T::BlockNumber) -> Weight {
+            let mut i: u32 = 0;
             for (origin, streams) in <Streams<T>>::iter() {
                 for Stream { target, spend_rate } in streams.iter() {
+                    i += 1;
                     if let Err(e) = T::Currency::transfer(&origin, target, *spend_rate, AllowDeath)
                     {
                         Self::deposit_event(Event::PaymentFailed(
@@ -107,7 +109,7 @@ pub mod pallet {
                     }
                 }
             }
-            0
+            <T as Config>::WeightInfo::on_initialize(i)
         }
     }
 
