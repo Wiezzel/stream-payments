@@ -1,5 +1,7 @@
 # Stream payments
 
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![Rust check](https://github.com/Wiezzel/stream-payments/actions/workflows/rust.yml/badge.svg)](https://github.com/Wiezzel/stream-payments/actions/workflows/rust.yml)
+
 This pallet supports creating *streams* – ongoing payments. Once a stream is opened,
 on every block a specified amount of funds will be transferred from the creator's account
 to the given target account until the stream is closed.
