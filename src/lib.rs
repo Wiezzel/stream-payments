@@ -112,16 +112,17 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(_n: T::BlockNumber) -> Weight {
-            let mut num_streams: u32 = 0;
+            let mut num_exhausted_streams: u32 = 0;
+            let mut num_transfers: u32 = 0;
             <Streams<T>>::translate(|origin, mut streams: StreamVec<T>| {
                 streams.retain(|Stream { target, spend_rate }| {
-                    num_streams += 1;
                     if T::Currency::free_balance(&origin) < *spend_rate {
                         Self::deposit_event(Event::StreamExhausted(
                             origin.clone(),
                             target.clone(),
                             *spend_rate,
                         ));
+                        num_exhausted_streams += 1;
                         return false; // Remove the exhausted stream
                     }
                     match T::Currency::transfer(&origin, target, *spend_rate, AllowDeath) {
@@ -141,6 +142,7 @@ pub mod pallet {
                             ));
                         }
                     }
+                    num_transfers += 1;
                     true
                 });
 
@@ -151,7 +153,10 @@ pub mod pallet {
                     None
                 }
             });
-            <T as Config>::WeightInfo::on_initialize(num_streams)
+            <T as Config>::WeightInfo::on_initialize_stream_exhausted(num_exhausted_streams)
+                .saturating_add(<T as Config>::WeightInfo::on_initialize_transfer(
+                    num_transfers,
+                ))
         }
     }
 
