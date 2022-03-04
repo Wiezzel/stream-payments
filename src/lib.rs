@@ -58,6 +58,8 @@ pub mod pallet {
         /// A new stream cannot be opened because the maximum number of
         /// streams for source account was already reached.
         StreamLimitReached,
+        /// Cannot create a stream with the target being the same account as the source.
+        ReflexiveStream,
         /// Stream with given origin/index does not exist.
         StreamNotFound,
     }
@@ -122,6 +124,9 @@ pub mod pallet {
             spend_rate: BalanceOf<T>,
         ) -> DispatchResult {
             let source = ensure_signed(origin)?;
+            if source == target {
+                return Err(Error::<T>::ReflexiveStream.into());
+            }
             <Streams<T>>::try_mutate(&source, |streams| {
                 streams.try_push(Stream {
                     target: target.clone(),

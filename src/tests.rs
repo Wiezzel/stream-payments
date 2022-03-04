@@ -71,6 +71,16 @@ fn stream_limit_reached() {
 }
 
 #[test]
+fn reflexive_stream() {
+    new_test_ext().execute_with(|| {
+        assert_noop!(
+            StreamPayments::open_stream(Origin::signed(A), A, SPEND_RATE),
+            Error::<Test>::ReflexiveStream
+        );
+    });
+}
+
+#[test]
 fn close_stream() {
     new_test_ext().execute_with(|| {
         System::set_block_number(1);

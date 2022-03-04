@@ -24,6 +24,6 @@ TBD
 
 - [ ] Auto-close streams when account runs out of funds (?)
 - [ ] Add an optional total spend limit for stream and reserve funds for limited streams.
-- [ ] Disallow origin == target (that's most probably user's mistake).
+- [x] Disallow origin == target (that's most probably user's mistake).
 
 License: Apache-2.0
