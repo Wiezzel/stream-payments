@@ -46,6 +46,8 @@ pub mod pallet {
         StreamOpened(T::AccountId, T::AccountId, BalanceOf<T>),
         /// A stream was successfully closed. [source, target, spend_rate]
         StreamClosed(T::AccountId, T::AccountId, BalanceOf<T>),
+        /// A stream was automatically closed due to insufficient funds. [source, target, amount]
+        StreamExhausted(T::AccountId, T::AccountId, BalanceOf<T>),
         /// A payment was made by a stream. [source, target, amount]
         PaymentMade(T::AccountId, T::AccountId, BalanceOf<T>),
         /// A payment failed [source, target, amount, reason]
@@ -72,16 +74,13 @@ pub mod pallet {
         pub spend_rate: Balance,
     }
 
+    type StreamVec<T> = BoundedVec<Stream<AccountIdOf<T>, BalanceOf<T>>, <T as Config>::MaxStreams>;
+
     /// The lookup table for streams.
     #[pallet::storage]
     #[pallet::getter(fn streams)]
-    pub(super) type Streams<T: Config> = StorageMap<
-        _,
-        Twox64Concat,
-        T::AccountId,
-        BoundedVec<Stream<AccountIdOf<T>, BalanceOf<T>>, T::MaxStreams>,
-        ValueQuery,
-    >;
+    pub(super) type Streams<T: Config> =
+        StorageMap<_, Twox64Concat, T::AccountId, StreamVec<T>, ValueQuery>;
 
     #[pallet::pallet]
     #[pallet::generate_store(pub(super) trait Store)]
@@ -91,26 +90,44 @@ pub mod pallet {
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(_n: T::BlockNumber) -> Weight {
             let mut i: u32 = 0;
-            for (origin, streams) in <Streams<T>>::iter() {
-                for Stream { target, spend_rate } in streams.iter() {
+            <Streams<T>>::translate(|origin, mut streams: StreamVec<T>| {
+                streams.retain(|Stream { target, spend_rate }| {
                     i += 1;
-                    if let Err(e) = T::Currency::transfer(&origin, target, *spend_rate, AllowDeath)
-                    {
-                        Self::deposit_event(Event::PaymentFailed(
-                            origin.clone(),
-                            target.clone(),
-                            *spend_rate,
-                            e,
-                        ));
-                    } else {
-                        Self::deposit_event(Event::PaymentMade(
+                    if T::Currency::free_balance(&origin) < *spend_rate {
+                        Self::deposit_event(Event::StreamExhausted(
                             origin.clone(),
                             target.clone(),
                             *spend_rate,
                         ));
+                        return false;
                     }
+                    match T::Currency::transfer(&origin, target, *spend_rate, AllowDeath) {
+                        Ok(_) => {
+                            Self::deposit_event(Event::PaymentMade(
+                                origin.clone(),
+                                target.clone(),
+                                *spend_rate,
+                            ));
+                        }
+                        Err(e) => {
+                            Self::deposit_event(Event::PaymentFailed(
+                                origin.clone(),
+                                target.clone(),
+                                *spend_rate,
+                                e,
+                            ));
+                        }
+                    }
+                    true
+                });
+
+                // If there are no more streams we can delete the entry
+                if streams.len() > 0 {
+                    Some(streams)
+                } else {
+                    None
                 }
-            }
+            });
             <T as Config>::WeightInfo::on_initialize(i)
         }
     }

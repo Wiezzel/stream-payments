@@ -37,23 +37,22 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: StreamPayments Streams (r:1 w:1)
 	fn open_stream() -> Weight {
-		(14_531_000 as Weight)
+		(14_420_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	// Storage: StreamPayments Streams (r:1 w:1)
 	fn close_stream(_i: u32, ) -> Weight {
-		(32_260_000 as Weight)
+		(32_132_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	// Storage: StreamPayments Streams (r:1 w:0)
-	// Storage: System Account (r:6 w:0)
 	fn on_initialize(i: u32, ) -> Weight {
-		(14_411_000 as Weight)
-			// Standard Error: 31_000
-			.saturating_add((7_985_000 as Weight).saturating_mul(i as Weight))
+		(24_991_000 as Weight)
+			// Standard Error: 11_000
+			.saturating_add((4_900_000 as Weight).saturating_mul(i as Weight))
 			.saturating_add(T::DbWeight::get().reads(2 as Weight))
-			.saturating_add(T::DbWeight::get().reads((1 as Weight).saturating_mul(i as Weight)))
+			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 }

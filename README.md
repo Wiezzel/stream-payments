@@ -22,7 +22,7 @@ TBD
 
 ### Features
 
-- [ ] Auto-close streams when account runs out of funds (?)
+- [x] Auto-close streams when account runs out of funds
 - [ ] Add an optional total spend limit for stream and reserve funds for limited streams.
 - [x] Disallow origin == target (that's most probably user's mistake).
 

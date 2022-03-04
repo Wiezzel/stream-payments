@@ -1,7 +1,5 @@
 use crate::mock::*;
 use crate::{pallet, Error, Event as StreamPaymentsEvent, Stream};
-use frame_support::dispatch::DispatchError;
-use frame_support::sp_runtime::ModuleError;
 use frame_support::traits::OnInitialize;
 use frame_support::{assert_noop, assert_ok};
 
@@ -149,7 +147,7 @@ fn payment_made() {
 }
 
 #[test]
-fn payment_failed() {
+fn stream_exhausted() {
     new_test_ext().execute_with(|| {
         System::set_block_number(1);
         // Transferring the whole funds A owns
@@ -166,18 +164,12 @@ fn payment_failed() {
         }
         assert_eq!(
             last_event(),
-            StreamPaymentsEvent::PaymentFailed(
-                A,
-                B,
-                INIT_BALANCE,
-                DispatchError::Module(ModuleError {
-                    index: 1, // Balances
-                    error: 2, // InsufficientBalance
-                    message: None
-                })
-            )
+            StreamPaymentsEvent::StreamExhausted(A, B, INIT_BALANCE,)
         );
         assert_eq!(Balances::free_balance(A), 0);
         assert_eq!(Balances::free_balance(B), 2 * INIT_BALANCE);
+
+        // Check if exhausted stream has been correctly removed
+        assert_eq!(*StreamPayments::streams(A), []);
     });
 }
