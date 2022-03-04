@@ -83,6 +83,8 @@ pub mod pallet {
         StreamLimitReached,
         /// Cannot create a stream with the target being the same account as the source.
         ReflexiveStream,
+        /// Cannot create a stream with higher spend rate than account's available balance.
+        InsufficientBalance,
         /// Stream with given origin/index does not exist.
         StreamNotFound,
     }
@@ -170,9 +172,15 @@ pub mod pallet {
             spend_rate: BalanceOf<T>,
         ) -> DispatchResult {
             let source = ensure_signed(origin)?;
+
             if source == target {
                 return Err(Error::<T>::ReflexiveStream.into());
             }
+
+            if T::Currency::free_balance(&source) < spend_rate {
+                return Err(Error::<T>::InsufficientBalance.into());
+            }
+
             <Streams<T>>::try_mutate(&source, |streams| {
                 streams.try_push(Stream {
                     target: target.clone(),

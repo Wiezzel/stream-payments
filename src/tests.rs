@@ -79,6 +79,16 @@ fn reflexive_stream() {
 }
 
 #[test]
+fn insufficient_balance() {
+    new_test_ext().execute_with(|| {
+        assert_noop!(
+            StreamPayments::open_stream(Origin::signed(A), B, INIT_BALANCE + 1),
+            Error::<Test>::InsufficientBalance
+        );
+    });
+}
+
+#[test]
 fn close_stream() {
     new_test_ext().execute_with(|| {
         System::set_block_number(1);

@@ -13,6 +13,7 @@ const SEED: u32 = 609;
 
 fn open_n_streams<T: Config>(n: u32) -> Result<(), &'static str> {
     let caller: T::AccountId = whitelisted_caller();
+    T::Currency::make_free_balance_be(&caller, 1_000_000_000u32.into());
     let spend_rate: BalanceOf<T> = 10u32.into();
     for i in 0..n {
         let target: T::AccountId = account("target", i, SEED);
@@ -29,6 +30,7 @@ benchmarks! {
     open_stream {
         let caller: T::AccountId = whitelisted_caller();
         let target: T::AccountId = account("target", 1, SEED);
+        T::Currency::make_free_balance_be(&caller, 1_000_000_000u32.into());
         let spend_rate: BalanceOf<T> = 10u32.into();
     }: _(RawOrigin::Signed(caller), target, spend_rate)
 

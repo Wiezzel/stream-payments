@@ -24,3 +24,4 @@ to the given target account, until the stream is closed.
 
 - [ ] Add an optional total spend limit for stream and reserve funds for limited streams.
 - [ ] Use fixed stream identifiers instead of indices.
+- [ ] Introduce fees/deposits for opening streams.
