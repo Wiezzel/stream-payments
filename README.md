@@ -2,28 +2,25 @@
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![Rust check](https://github.com/Wiezzel/stream-payments/actions/workflows/rust.yml/badge.svg)](https://github.com/Wiezzel/stream-payments/actions/workflows/rust.yml)
 
-This pallet supports creating *streams* – ongoing payments. Once a stream is opened,
-on every block a specified amount of funds will be transferred from the creator's account
-to the given target account until the stream is closed.
+This pallet supports creating *streams* i.e. ongoing payments. Once a stream is opened,
+on every block a specified amount of funds will be transferred from the origin account
+to the given target account, until the stream is closed.
 
 ## Interface
-TBD 
 
-## TODO:
+### Config
 
-### Maintenance
+* `MaxStreams: u32` – The maximum number of streams per account.
 
-- [ ] Fill in README
-- [ ] Add docstrings
-- [x] Compute proper weights
-  - [x] Extrinsics
-  - [x] Hooks
-- [x] Write some tests
+### Dispatchable functions
 
-### Features
+* `open_stream(origin, target, spend_rate)`  
+   Open a new stream. From the next block on, on each block `spend_rate` will be transferred to the 
+  `target` account. The stream can be closed by calling `close_stream`.
+* `close_stream(origin, index)`  
+   Close a stream. From the next block on, transfers will stop.
 
-- [x] Auto-close streams when account runs out of funds
+## Planned features
+
 - [ ] Add an optional total spend limit for stream and reserve funds for limited streams.
-- [x] Disallow origin == target (that's most probably user's mistake).
-
-License: Apache-2.0
+- [ ] Use fixed stream identifiers instead of indices.

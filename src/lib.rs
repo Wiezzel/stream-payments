@@ -1,3 +1,24 @@
+//! # Stream payments
+//!
+//! ## Overview
+//!
+//! This pallet supports creating *streams* i.e. ongoing payments. Once a stream is opened,
+//! on every block a specified amount of funds will be transferred from the origin account
+//! to the given target account, until the stream is closed.
+//!
+//! ## Interface
+//!
+//! ### Config
+//!
+//! * `MaxStreams: u32` – The maximum number of streams per account.
+//!
+//! ### Dispatchable functions
+//!
+//! * `open_stream(origin, target, spend_rate)` – Open a new stream. From the next block on,
+//!   on each block `spend_rate` will be transferred to the `target` account. The stream can be
+//!   closed by calling `close_stream`.
+//! * `close_stream(origin, index)` – Close a stream. From the next block on, transfers will stop.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 mod benchmarking;
@@ -89,17 +110,17 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(_n: T::BlockNumber) -> Weight {
-            let mut i: u32 = 0;
+            let mut num_streams: u32 = 0;
             <Streams<T>>::translate(|origin, mut streams: StreamVec<T>| {
                 streams.retain(|Stream { target, spend_rate }| {
-                    i += 1;
+                    num_streams += 1;
                     if T::Currency::free_balance(&origin) < *spend_rate {
                         Self::deposit_event(Event::StreamExhausted(
                             origin.clone(),
                             target.clone(),
                             *spend_rate,
                         ));
-                        return false;
+                        return false; // Remove the exhausted stream
                     }
                     match T::Currency::transfer(&origin, target, *spend_rate, AllowDeath) {
                         Ok(_) => {
@@ -128,12 +149,20 @@ pub mod pallet {
                     None
                 }
             });
-            <T as Config>::WeightInfo::on_initialize(i)
+            <T as Config>::WeightInfo::on_initialize(num_streams)
         }
     }
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+        /// Open a new stream. From the next block on, on each block `spend_rate` will be
+        /// transferred to the `target` account. The stream can be closed by calling `close_stream`.
+        ///
+        /// No more that `T::MaxStreams` streams can be open for a single origin.
+        ///
+        /// Reflexive (i.e. `source == target`) streams cannot be opened.
+        ///
+        /// The dispatch origin for this call must be _Signed_.
         #[pallet::weight(<T as Config>::WeightInfo::open_stream())]
         pub fn open_stream(
             origin: OriginFor<T>,
@@ -155,6 +184,14 @@ pub mod pallet {
             Ok(())
         }
 
+        /// Close a stream. From the next block on, transfers will stop.
+        ///
+        /// Index of the stream is counted per-origin, starting with 0. Streams are ordered by
+        /// creation time. Stream's index could change if another stream, with a lower index
+        /// is closed. Streams lookup table should be queried before the call to check the
+        /// appropriate index.
+        ///
+        /// The dispatch origin for this call must be _Signed_.
         #[pallet::weight(<T as Config>::WeightInfo::close_stream(0))]
         pub fn close_stream(origin: OriginFor<T>, index: u32) -> DispatchResult {
             let source = ensure_signed(origin)?;
