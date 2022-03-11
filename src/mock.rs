@@ -61,15 +61,18 @@ impl pallet_balances::Config for Test {
     type WeightInfo = ();
 }
 
+pub const STREAM_DEPOSIT: u64 = 100;
 pub const MAX_STREAMS: u32 = 4;
 
 frame_support::parameter_types! {
+    pub const StreamDeposit: u64 = STREAM_DEPOSIT;
     pub const MaxStreams: u32 = MAX_STREAMS;
 }
 
 impl stream_payments::Config for Test {
     type Event = Event;
     type Currency = Balances;
+    type StreamDeposit = StreamDeposit;
     type MaxStreams = MaxStreams;
     type WeightInfo = stream_payments::weights::SubstrateWeight<Test>;
 }

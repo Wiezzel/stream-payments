@@ -28,7 +28,7 @@ mod mock;
 mod tests;
 pub mod weights;
 
-use frame_support::traits::Currency;
+use frame_support::traits::{Currency, ReservableCurrency};
 use sp_std::prelude::*;
 
 pub use pallet::*;
@@ -50,7 +50,11 @@ pub mod pallet {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
         /// The currency trait.
-        type Currency: Currency<Self::AccountId>;
+        type Currency: ReservableCurrency<Self::AccountId>;
+
+        /// The (refundable) deposit required to open a stream.
+        #[pallet::constant]
+        type StreamDeposit: Get<BalanceOf<Self>>;
 
         /// The maximum number of streams per account.
         #[pallet::constant]
@@ -123,7 +127,9 @@ pub mod pallet {
                             *spend_rate,
                         ));
                         num_exhausted_streams += 1;
-                        return false; // Remove the exhausted stream
+                        // Return deposit and remove the exhausted stream
+                        T::Currency::unreserve(&origin, T::StreamDeposit::get());
+                        return false;
                     }
                     match T::Currency::transfer(&origin, target, *spend_rate, AllowDeath) {
                         Ok(_) => {
@@ -182,7 +188,7 @@ pub mod pallet {
                 return Err(Error::<T>::ReflexiveStream.into());
             }
 
-            if T::Currency::free_balance(&source) < spend_rate {
+            if T::Currency::free_balance(&source) < spend_rate + T::StreamDeposit::get() {
                 return Err(Error::<T>::InsufficientBalance.into());
             }
 
@@ -193,6 +199,7 @@ pub mod pallet {
                 })
             })
             .map_err(|_| Error::<T>::StreamLimitReached)?;
+            T::Currency::reserve(&source, T::StreamDeposit::get())?;
             Self::deposit_event(Event::StreamOpened(source, target, spend_rate));
             Ok(())
         }
@@ -216,6 +223,7 @@ pub mod pallet {
                     Err(Error::<T>::StreamNotFound)
                 }
             })?;
+            T::Currency::unreserve(&source, T::StreamDeposit::get());
             Self::deposit_event(Event::StreamClosed(source, target, spend_rate));
             Ok(())
         }

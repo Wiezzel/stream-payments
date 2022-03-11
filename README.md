@@ -24,6 +24,6 @@ to the given target account, until the stream is closed.
 
 - [ ] Add an optional total spend limit for stream and reserve funds for limited streams.
 - [ ] Use fixed stream identifiers instead of indices.
-- [ ] Introduce fees/deposits for opening streams.
+- [x] Introduce fees/deposits for opening streams.
 - [ ] Keep the starting block and total amount transferred (stats for front-end).
 - [ ] Introduce payment block interval and grace period.

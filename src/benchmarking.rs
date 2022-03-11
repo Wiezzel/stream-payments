@@ -11,10 +11,13 @@ use frame_system::RawOrigin;
 
 const SEED: u32 = 609;
 
-fn open_n_streams<T: Config>(n: u32) -> Result<(), &'static str> {
+fn open_n_streams<T: Config, V: Into<BalanceOf<T>>>(
+    n: u32,
+    spend_rate: V,
+) -> Result<(), &'static str> {
     let caller: T::AccountId = whitelisted_caller();
     T::Currency::make_free_balance_be(&caller, 1_000_000_000u32.into());
-    let spend_rate: BalanceOf<T> = 10u32.into();
+    let spend_rate: BalanceOf<T> = spend_rate.into();
     for i in 0..n {
         let target: T::AccountId = account("target", i, SEED);
         StreamPayments::<T>::open_stream(
@@ -42,7 +45,7 @@ benchmarks! {
     // but still better than doing just one case.
     close_stream {
         let i in 0..(T::MaxStreams::get() - 1);  // Range end seems to be **inclusive** (ugh!)
-        open_n_streams::<T>(T::MaxStreams::get())?;
+        open_n_streams::<T, u32>(T::MaxStreams::get(), 1000)?;
         let caller: T::AccountId = whitelisted_caller();
     }: _(RawOrigin::Signed(caller.clone()), i)
     verify {
@@ -51,7 +54,7 @@ benchmarks! {
 
     on_initialize_transfer {
         let i in 0..(T::MaxStreams::get() - 1);  // Range end seems to be **inclusive** (ugh!)
-        open_n_streams::<T>(i)?;
+        open_n_streams::<T, u32>(i, 1000)?;
         let caller: T::AccountId = whitelisted_caller();
     } : {
         StreamPayments::<T>::on_initialize(2u32.into());
@@ -61,7 +64,10 @@ benchmarks! {
 
     on_initialize_stream_exhausted {
         let i in 0..(T::MaxStreams::get() - 1);  // Range end seems to be **inclusive** (ugh!)
-        open_n_streams::<T>(i)?;
+        // Spend rate has to be bigger than (i * deposit) so that total amount of freed deposits
+        // does not suffice to make any payments.
+        let spend_rate = T::StreamDeposit::get() * i.into() + 1u32.into();
+        open_n_streams::<T, BalanceOf<T>>(i, spend_rate)?;
         let caller: T::AccountId = whitelisted_caller();
         T::Currency::make_free_balance_be(&caller, 0u32.into());
     } : {

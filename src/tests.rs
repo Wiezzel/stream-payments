@@ -43,6 +43,8 @@ fn open_stream() {
                 spend_rate: SPEND_RATE
             }]
         );
+        assert_eq!(Balances::free_balance(A), INIT_BALANCE - STREAM_DEPOSIT);
+        assert_eq!(Balances::reserved_balance(A), STREAM_DEPOSIT);
         assert_eq!(
             last_event(),
             StreamPaymentsEvent::StreamOpened(A, B, SPEND_RATE)
@@ -82,7 +84,7 @@ fn reflexive_stream() {
 fn insufficient_balance() {
     new_test_ext().execute_with(|| {
         assert_noop!(
-            StreamPayments::open_stream(Origin::signed(A), B, INIT_BALANCE + 1),
+            StreamPayments::open_stream(Origin::signed(A), B, INIT_BALANCE - STREAM_DEPOSIT + 1),
             Error::<Test>::InsufficientBalance
         );
     });
@@ -99,6 +101,8 @@ fn close_stream() {
         ));
         assert_ok!(StreamPayments::close_stream(Origin::signed(A), 0));
         assert_eq!(*StreamPayments::streams(A), []);
+        assert_eq!(Balances::free_balance(A), INIT_BALANCE);
+        assert_eq!(Balances::reserved_balance(A), 0);
         assert_eq!(
             last_event(),
             StreamPaymentsEvent::StreamClosed(A, B, SPEND_RATE)
@@ -134,7 +138,10 @@ fn payment_made() {
             last_event(),
             StreamPaymentsEvent::PaymentMade(A, B, SPEND_RATE)
         );
-        assert_eq!(Balances::free_balance(A), INIT_BALANCE - SPEND_RATE);
+        assert_eq!(
+            Balances::free_balance(A),
+            INIT_BALANCE - SPEND_RATE - STREAM_DEPOSIT
+        );
         assert_eq!(Balances::free_balance(B), INIT_BALANCE + SPEND_RATE);
 
         // Let's add one more stream in the opposite direction
@@ -147,11 +154,11 @@ fn payment_made() {
         <StreamPayments as OnInitialize<u64>>::on_initialize(2);
         assert_eq!(
             Balances::free_balance(A),
-            INIT_BALANCE - 2 * SPEND_RATE + 10 * SPEND_RATE
+            INIT_BALANCE - 2 * SPEND_RATE + 10 * SPEND_RATE - STREAM_DEPOSIT
         );
         assert_eq!(
             Balances::free_balance(B),
-            INIT_BALANCE + 2 * SPEND_RATE - 10 * SPEND_RATE
+            INIT_BALANCE + 2 * SPEND_RATE - 10 * SPEND_RATE - STREAM_DEPOSIT
         );
     });
 }
@@ -161,10 +168,11 @@ fn stream_exhausted() {
     new_test_ext().execute_with(|| {
         System::set_block_number(1);
         // Transferring the whole funds A owns
+        let spend_rate = INIT_BALANCE - STREAM_DEPOSIT;
         assert_ok!(StreamPayments::open_stream(
             Origin::signed(A),
             B,
-            INIT_BALANCE
+            spend_rate
         ));
 
         // Step two blocks - the second transfer should fail
@@ -174,10 +182,10 @@ fn stream_exhausted() {
         }
         assert_eq!(
             last_event(),
-            StreamPaymentsEvent::StreamExhausted(A, B, INIT_BALANCE,)
+            StreamPaymentsEvent::StreamExhausted(A, B, spend_rate,)
         );
-        assert_eq!(Balances::free_balance(A), 0);
-        assert_eq!(Balances::free_balance(B), 2 * INIT_BALANCE);
+        assert_eq!(Balances::free_balance(A), STREAM_DEPOSIT);
+        assert_eq!(Balances::free_balance(B), INIT_BALANCE + spend_rate);
 
         // Check if exhausted stream has been correctly removed
         assert_eq!(*StreamPayments::streams(A), []);
